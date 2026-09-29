@@ -11,14 +11,14 @@ class TestTeam__z(unittest.TestCase):
 
     def test_phone_number(self):
         """Test PHONE_NUMBER functionality"""
-        phone_numbers = [
-            "+1 212-555-1234",
-            "(415) 555-2671",
-            "+44 20 7946 0958",
+        examples = [
+            ("Call me at +1 212-555-1234.", "+1 212-555-1234"),
+            ("(415) 555-2671", "(415) 555-2671"),
+            ("212.555.1234", "212.555.1234"),
+            ("+44 20 7946 0958", "+44 20 7946 0958"),
         ]
-        for phone_number in phone_numbers:
-            with self.subTest(phone_number=phone_number):
-                text = f"Call me at {phone_number}."
+        for text, phone_number in examples:
+            with self.subTest(text=text):
                 results = analyze_text(text, entity_list=['PHONE_NUMBER'])
                 detected = [
                     text[result.start:result.end]
@@ -27,7 +27,11 @@ class TestTeam__z(unittest.TestCase):
                 ]
                 self.assertIn(phone_number, detected)
 
-        for text in ["Call me when you arrive.", "The room number is 42."]:
+        for text in [
+            "Call me when you arrive.",
+            "The room number is 42.",
+            "The meeting is on 2026-10-01.",
+        ]:
             with self.subTest(text=text):
                 results = analyze_text(text, entity_list=['PHONE_NUMBER'])
                 self.assertFalse(any(
