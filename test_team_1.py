@@ -22,10 +22,6 @@ class TestTeam__1(unittest.TestCase):
         """Test IBAN_CODE functionality"""
         entity = ['IBAN_CODE']
 
-        def mask(iban):
-            """Hide all but country code and last 4 in failure messages"""
-            iban = iban.replace(' ', '')
-            return iban[:2] + '*' * (len(iban) - 6) + iban[-4:]
 
         # Positive: valid IBANs from several countries
         valid_ibans = [
@@ -36,10 +32,12 @@ class TestTeam__1(unittest.TestCase):
             'NL91ABNA0417164300',           # Netherlands
         ]
         for iban in valid_ibans:
-            with self.subTest(iban=mask(iban)):
+            # Mask all but country code and last 4 in failure messages
+            masked = iban[:2] + '*' * (len(iban) - 6) + iban[-4:]
+            with self.subTest(iban=masked):
                 text = f'Please send the payment to {iban} by Friday.'
                 result = analyze_text(text, entity)
-                self.assertEqual(len(result), 1, mask(iban))
+                self.assertEqual(len(result), 1, masked)
                 self.assertEqual(result[0].entity_type, 'IBAN_CODE')
 
         # Positive: IBAN written with spaces, location returned
