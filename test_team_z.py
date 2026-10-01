@@ -11,6 +11,32 @@ class TestTeam__z(unittest.TestCase):
 
     def test_phone_number(self):
         """Test PHONE_NUMBER functionality"""
+        examples = [
+            ("Call me at +1 212-555-1234.", "+1 212-555-1234"),
+            ("(415) 555-2671", "(415) 555-2671"),
+            ("212.555.1234", "212.555.1234"),
+            ("+44 20 7946 0958", "+44 20 7946 0958"),
+        ]
+        for text, phone_number in examples:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['PHONE_NUMBER'])
+                detected = [
+                    text[result.start:result.end]
+                    for result in results
+                    if result.entity_type == 'PHONE_NUMBER'
+                ]
+                self.assertIn(phone_number, detected)
+
+        for text in [
+            "Call me when you arrive.",
+            "The room number is 42.",
+            "The meeting is on 2026-10-01.",
+        ]:
+            with self.subTest(text=text):
+                results = analyze_text(text, entity_list=['PHONE_NUMBER'])
+                self.assertFalse(any(
+                    result.entity_type == 'PHONE_NUMBER' for result in results
+                ))
 
     def test_location(self):
         """Test LOCATION functionality"""
