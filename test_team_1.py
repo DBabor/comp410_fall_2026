@@ -20,6 +20,74 @@ class TestTeam__1(unittest.TestCase):
 
     def test_iban_code(self):
         """Test IBAN_CODE functionality"""
+        entity = ['IBAN_CODE']
+
+
+        # Positive: valid IBANs from several countries
+        valid_ibans = [
+            'GB29NWBK60161331926819',       # example from issue #20
+            'GB82WEST12345698765432',       # United Kingdom
+            'DE89370400440532013000',       # Germany
+            'FR1420041010050500013M02606',  # France (letter in BBAN)
+            'NL91ABNA0417164300',           # Netherlands
+        ]
+        for iban in valid_ibans:
+            # Mask all but country code and last 4 in failure messages
+            masked = iban[:2] + '*' * (len(iban) - 6) + iban[-4:]
+            with self.subTest(iban=masked):
+                text = f'Please send the payment to {iban} by Friday.'
+                result = analyze_text(text, entity)
+                self.assertEqual(len(result), 1, masked)
+                self.assertEqual(result[0].entity_type, 'IBAN_CODE')
+
+        # Positive: IBAN written with spaces, location returned
+        text = 'Pay to GB29 NWBK 6016 1331 9268 19 today'
+        result = analyze_text(text, entity)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(text[result[0].start:result[0].end],
+                         'GB29 NWBK 6016 1331 9268 19')
+
+        # Positive: exact location without spaces
+        result = analyze_text('IBAN: GB29NWBK60161331926819', entity)
+        self.assertEqual((result[0].start, result[0].end), (6, 28))
+
+        # Positive: multiple IBANs in one document
+        text = ('Primary: DE89370400440532013000. '
+                'Backup: FR1420041010050500013M02606.')
+        result = analyze_text(text, entity)
+        found = sorted(text[r.start:r.end] for r in result)
+        self.assertEqual(found, ['DE89370400440532013000',
+                                 'FR1420041010050500013M02606'])
+
+        # Positive: contextual term nearby
+        text = 'My International Bank Account Number is NL91ABNA0417164300'
+        result = analyze_text(text, entity)
+        self.assertEqual(len(result), 1)
+        self.assertGreaterEqual(result[0].score, 0.5)
+
+        # Negative: invalid structure, length, or checksum
+        invalid_texts = [
+            'Send to GB29NWBK60161331926818',  # bad checksum (last digit)
+            'Send to DE8937040044053201300',   # too short for Germany
+            'Send to XX29NWBK60161331926819',  # not a real country code
+        ]
+        # Negative: common false positives
+        invalid_texts += [
+            'ISBN 978-0-306-40615-7 is on the reading list.',
+            'Call me at 919-555-0123.',
+            'Order number AB12345678 shipped on 2026-09-30.',
+            'Meet me at the library at noon.',
+        ]
+        for text in invalid_texts:
+            with self.subTest(text=text):
+                self.assertEqual(analyze_text(text, entity), [])
+
+        # Masking: anonymize_text hides the IBAN in output
+        from pii_scan import anonymize_text  # local import avoids conflicts
+        text = 'Pay GB29 NWBK 6016 1331 9268 19 today'
+        masked = anonymize_text(text, entity)
+        self.assertEqual(masked, 'Pay <IBAN_CODE> today')
+        self.assertNotIn('NWBK', masked)
 
     def test_ip_address(self):
         """Test IP_ADDRESS functionality"""
