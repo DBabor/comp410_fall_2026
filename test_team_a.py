@@ -11,7 +11,7 @@ class TestTeam__a(unittest.TestCase):
 
     def test_url(self):
         """Test URL functionality"""
-        # Positive test: Normal HTTPS URL with query para
+        # Positive test: Normal HTTPS URL with query parameter
         text_query = "User logged in with https://auth.domain.com/login?token=abc123secret"
         results_query = analyze_text(text_query, ['URL'])
         self.assertEqual(len(results_query), 1)
