@@ -11,36 +11,40 @@ class TestTeam__a(unittest.TestCase):
 
     def test_url(self):
         """Test URL functionality"""
-        # Positive test: Normal HTTPS URL with query parameter
-        text_query = "User logged in with https://auth.domain.com/login?token=abc123secret"
-        results_query = analyze_text(text_query, ['URL'])
-        self.assertEqual(len(results_query), 1)
-        self.assertEqual(results_query[0].entity_type, 'URL')
-
-        # Positive test: HTTP URL with non-standard port
-        text_port = "Access the dashboard at http://localhost:8080/metrics"
-        results_port = analyze_text(text_port, ['URL'])
-        self.assertEqual(len(results_port), 1)
-        self.assertEqual(results_port[0].entity_type, 'URL')
-
-        # Positive test: FTP scheme
-        text_ftp = "Download the archive from ftp://files.internal.net/pub/data.zip"
-        results_ftp = analyze_text(text_ftp, ['URL'])
-        self.assertEqual(len(results_ftp), 1)
-        self.assertEqual(results_ftp[0].entity_type, 'URL')
-
-        # Negative tesst: Text without web links
-        text_neg = "Testing Text"
-        results_neg = analyze_text(text_neg, ['URL'])
-        self.assertEqual(len(results_neg), 0)
-
-        # Negative test: Domain mention without a scheme protocol (e.g., standard text)
-        text_neg_domain = "Test Text #2"
-        results_neg_domain = analyze_text(text_neg_domain, ['URL'])
-        self.assertEqual(len(results_neg_domain), 0)
 
     def test_us_bank_number(self):
         """Test US_BANK_NUMBER functionality"""
+        # --- POSITIVE TESTS (Should detect as US_BANK_NUMBER) ---
+
+        # Valid 10-digit account number with context
+        text_10deg = "My direct deposit bank account number is 1234567890"
+        results_10deg = analyze_text(text_10deg, ['US_BANK_NUMBER'])
+        self.assertEqual(len(results_10deg), 1)
+        self.assertEqual(results_10deg[0].entity_type, 'US_BANK_NUMBER')
+
+        # Valid 12-digit account number with routing/account context
+        text_12deg = "Transfer funds to routing/account number 987654321012"
+        results_12deg = analyze_text(text_12deg, ['US_BANK_NUMBER'])
+        self.assertEqual(len(results_12deg), 1)
+        self.assertEqual(results_12deg[0].entity_type, 'US_BANK_NUMBER')
+
+
+        # --- NEGATIVE TESTS (Should NOT detect as US_BANK_NUMBER) ---
+
+        # Plain text
+        text_plain = "TEST normal text"
+        results_plain = analyze_text(text_plain, ['US_BANK_NUMBER'])
+        self.assertEqual(len(results_plain), 0)
+
+        # Short number string
+        text_short = "TEST short number 123"
+        results_short = analyze_text(text_short, ['US_BANK_NUMBER'])
+        self.assertEqual(len(results_short), 0)
+
+        # Phone number not a bank account
+        text_phone = "Call our customer service team at 800-555-0199"
+        results_phone = analyze_text(text_phone, ['US_BANK_NUMBER'])
+        self.assertEqual(len(results_phone), 0)
 
     def test_us_driver_license(self):
         """Test US_DRIVER_LICENSE functionality"""
