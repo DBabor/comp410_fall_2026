@@ -24,26 +24,29 @@ class TestTeam__1(unittest.TestCase):
     def test_ip_address(self):
         """Test IP_ADDRESS functionality"""
         valid_cases = [
-            ("My IP is 192.168.1.1", "192.168.1.1"),
-            ("Server at 8.8.8.8 today", "8.8.8.8"),
-            ("IPv6 2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-             "2001:0db8:85a3:0000:0000:8a2e:0370:7334"),
-            ("short 2001:db8::1", "2001:db8::1"),
+            ("Login failed for user from IP 203.0.113.42",
+             "203.0.113.42", 0.95),
+            ("Allow traffic from 198.51.100.0/24", "198.51.100.0/24", 0.6),
+            ("Client connected via 2001:db8:85a3::8a2e:370:7334",
+             "2001:db8:85a3::8a2e:370:7334", 0.6),
+            ("ipv6 loopback is ::1", "::1", 0.95),
+            ("Mapped address ::ffff:192.0.2.10", "::ffff:192.0.2.10", 0.6),
         ]
 
-        for text, expected_value in valid_cases:
+        for text, expected_value, expected_score in valid_cases:
             results = analyze_text(text, entity_list=['IP_ADDRESS'])
             self.assertEqual(len(results), 1)
             result = results[0]
             self.assertEqual(result.entity_type, 'IP_ADDRESS')
             self.assertEqual(text[result.start:result.end], expected_value)
+            self.assertAlmostEqual(result.score, expected_score)
 
         invalid_cases = [
-            "bad 256.256.256.256",
-            "bad 192.168.1",
-            "bad 999.1.1.1",
-            "bad 2001:db8:::1",
-            "no ip here",
+            "Octet out of range: 256.1.1.1",
+            "Only three parts: 192.0.2",
+            "Bad IPv6 2001:db8::1::2",
+            "The meeting started at 12:30:45",
+            "Visit example.com",
         ]
 
         for text in invalid_cases:
